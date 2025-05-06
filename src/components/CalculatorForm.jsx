@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from "react";
-import { Grid, TextField, Button, Typography, Box } from "@mui/material";
+import { Grid, TextField, Button, Box } from "@mui/material";
 import useEMICalculator from "../hooks/useEMICalculator";
 import { fetchExchangeRates } from "../api/exchangeRate";
 
 export default function CalculatorForm({ onCalculate }) {
+  // defaults
   const [principal, setPrincipal] = useState("100000");
   const [rate, setRate] = useState("8.5");
   const [tenure, setTenure] = useState("5");
   const [rates, setRates] = useState({});
-  const [currency, setCurrency] = useState(
-    process.env.REACT_APP_BASE_CURRENCY || "USD"
-  );
+  const currency = process.env.REACT_APP_BASE_CURRENCY || "USD";
 
-  // EMI in base‐currency per month
+  // compute EMI in base currency
   const emi = useEMICalculator(+principal, +rate, +tenure * 12);
 
-  // fetch live rates once
+  // -- Fetch exchange‐rates once on mount --
   useEffect(() => {
     fetchExchangeRates()
       .then((data) => {
@@ -23,14 +22,16 @@ export default function CalculatorForm({ onCalculate }) {
         onCalculate({ principal, rate, tenure, emi, rates: data, currency });
       })
       .catch(console.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // re-fire calculate when inputs change
+  // -- Notify parent when inputs or emi change --
   useEffect(() => {
     if (Object.keys(rates).length) {
       onCalculate({ principal, rate, tenure, emi, rates, currency });
     }
-  }, [principal, rate, tenure, emi, currency, rates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [principal, rate, tenure, emi]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -79,12 +80,6 @@ export default function CalculatorForm({ onCalculate }) {
           </Button>
         </Grid>
       </Grid>
-
-      {/*       {emi > 0 && (
-        <Typography variant="h6" sx={{ mt: 3 }}>
-          Monthly EMI ({process.env.REACT_APP_BASE_CURRENCY}): {emi.toFixed(2)}
-        </Typography>
-      )} */}
     </Box>
   );
 }
